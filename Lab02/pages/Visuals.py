@@ -4,6 +4,11 @@ import streamlit as st
 import pandas as pd
 import json
 import plotly.express as px
+import os
+
+BASE_DIR = os.path.join(os.path.dirname(__file__), "..")
+JSON_PATH = os.path.join(BASE_DIR, "data.json")
+CSV_PATH = os.path.join(BASE_DIR, "data.csv")
 
 # PAGE CONFIGURATION
 st.set_page_config(
