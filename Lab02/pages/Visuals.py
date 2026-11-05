@@ -19,6 +19,26 @@ st.set_page_config(
 # PAGE TITLE
 st.title("Data Visualizations 📈")
 
+def show_metrics(key, values, selection):
+    mean_now = values.mean()
+    median_now = values.median()
+    if key not in st.session_state:
+        st.session_state[key] = {
+            "selection": selection,
+            "mean": mean_now,
+            "median": median_now,
+            "prev_mean": mean_now,
+            "prev_median": median_now,
+        }
+
+    s= st.session_state[key]
+    if s["selection"] != selection:
+        s["prev_mean"], s["prev_median"] = s["mean"], s["median"]
+        s["mean"], s["median"], s["selection"] = mean_now, median_now, selection
+    col1, col2 = st.columns(2)
+    col1.metric("Mean", f"{s['mean']:.2f}", delta=round(s["mean"] - s["prev_mean"], 2))
+    col2.metric("Median", f"{s['median']:.1f}", delta=round(s["median"] - s["prev_median"], 1))
+
 
 # PART 1: GRAPHS FROM data.json
 # --- YOUR CODE GOES HERE ---
@@ -61,6 +81,39 @@ pie = px.pie(
     title = "Share of Total Rating"
 )
 st.plotly_chart(pie)
+shown_ratings = df["my_rating"][:st.session_state.limit]
+show_metrics("stats_json", shown_ratings, st.session_state.limit)
 
 # PART 2: GRAPHS FROM data.csv
-# --- YOUR CODE GOES HERE ---
+st.divider()
+st.header("Survey Results")
+if os.path.exists(CSV_PATH) and os.path.getsize(CSV_PATH) > 0:
+    csv_df = pd.read_csv(CSV_PATH)
+    csv_df["rating"] = pd.to_numeric(csv_df["rating"], errors="coerce")
+    csv_df = csv_df.dropna(subset=["rating"])
+    st.subheader("Average Rating by Genre")
+    avg_by_genre = csv_df.groupby("genre")["rating"].mean()
+    st.bar_chart(avg_by_genre)
+    st.subheader("Rating Distribution")
+    genre_options = ["All"] + sorted(csv_df["genre"].unique())
+    if "genre_choice" not in st.session_state:
+        st.session_state.genre_choice = "All"
+    st.selectbox("Filter by genre", genre_options, key="genre_choice")
+    choice = st.session_state.genre_choice
+    if choice == "All":
+        filtered = csv_df
+    else:
+        filtered = csv_df[csv_df["genre"] == choice]
+    hist = px.histogram(
+        filtered,
+        x="rating",
+        nbins=10,
+        title=f"Distribution of Ratings ({choice})",
+        labels={"rating": "Rating"},
+    )
+    hist.update_layout(yaxis_title="Number of albums")
+    st.plotly_chart(hist)
+    show_metrics("stats.csv", filtered["rating"], choice)
+else:
+    st.warning("No survey data yet. Fill out the survey to see these charts.")
+
