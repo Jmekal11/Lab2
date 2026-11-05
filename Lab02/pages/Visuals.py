@@ -17,7 +17,7 @@ st.title("Data Visualizations 📈")
 
 # PART 1: GRAPHS FROM data.json
 # --- YOUR CODE GOES HERE ---
-infile = open("data.json")
+infile = open(JSON_PATH)
 lines = infile.readlines()
 infile.close()
 
